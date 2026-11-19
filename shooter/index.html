@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>شوتر اول‌شخص</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0c12;--fg:#f2f2f5;--ac:#ffc83d;--pn:#1b1d29;--bd:#33364a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:Tahoma,system-ui,sans-serif;overflow:hidden;touch-action:none}
+#c{position:fixed;inset:0;width:100%;height:100%;image-rendering:pixelated}
+#t{position:fixed;inset:0}
+#h{position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;display:flex;justify-content:space-between;padding:6px 14px;font-size:14px;font-weight:bold;text-shadow:0 1px 3px #000;pointer-events:none;direction:ltr}
+#msg{position:fixed;top:38px;left:0;right:0;text-align:center;color:var(--ac);font-size:14px;pointer-events:none}
+#x{position:fixed;left:50%;top:50%;width:14px;height:14px;margin:-7px;pointer-events:none;opacity:.8}
+#x:before,#x:after{content:"";position:absolute;background:#fff}
+#x:before{left:6px;top:0;width:2px;height:14px}#x:after{top:6px;left:0;height:2px;width:14px}
+.b{position:fixed;border-radius:50%;border:2px solid #fff6;background:#fff2;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#fff}
+#f{right:calc(24px + env(safe-area-inset-right,0px));bottom:24px;width:86px;height:86px;background:#e335;font-size:15px}
+#s{right:130px;bottom:90px;width:54px;height:54px;font-size:11px}
+#js{display:none;position:fixed;width:100px;height:100px;margin:-50px;border-radius:50%;border:2px solid #fff5;pointer-events:none}
+#kn{position:absolute;left:30px;top:30px;width:40px;height:40px;border-radius:50%;background:#fff6}
+.o{position:fixed;inset:0;background:#0b0c12ee;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;text-align:center;overflow:auto}
+.o h1{margin:0;font-size:26px;color:var(--ac)}
+button.g{background:var(--pn);color:var(--fg);border:1px solid var(--bd);border-radius:10px;padding:10px 16px;font:inherit;font-size:14px;min-width:150px}
+button.g:disabled{opacity:.35}
+button.p{background:var(--ac);color:#111;border:0;font-weight:bold}
+#items{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(620px,100%)}
+#rot{display:none;position:fixed;inset:0;background:var(--bg);z-index:9;align-items:center;justify-content:center;font-size:18px;text-align:center;padding:20px}
+@media (orientation:portrait){#rot{display:flex}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="t"></div>
+<div id="js"><div id="kn"></div></div>
+<div id="h"><span id="hp"></span><span id="am"></span><span id="mo"></span><span id="lv"></span></div>
+<div id="msg"></div>
+<div id="x"></div>
+<div class="b" id="f">شلیک</div>
+<div class="b" id="s">تعویض</div>
+<div class="o" id="menu"><h1>شوتر اول‌شخص</h1><p>دشمن‌ها رو بزن، سکه‌ها رو جمع کن، تفنگ و تیر بخر</p><button class="g p" id="go">شروع</button></div>
+<div class="o" id="shop"><h1>فروشگاه</h1><div id="sm"></div><div id="items"></div><button class="g p" id="next">مرحله بعد</button></div>
+<div class="o" id="dead"><h1>مردی!</h1><button class="g p" id="again">دوباره امتحان کن</button></div>
+<div id="rot">گوشی رو بچرخون (حالت افقی)</div>
+<script>
+const cv=document.getElementById("c"),g=cv.getContext("2d"),$=id=>document.getElementById(id);
+let W=300,H=170,PL=.66,zb=new Float32Array(W);
+function rs(){W=Math.round(H*innerWidth/innerHeight)||300;cv.width=W;cv.height=H;zb=new Float32Array(W)}
+addEventListener("resize",rs);rs();
+const N=19,M=[];
+for(let y=0;y<N;y++){M[y]=[];for(let x=0;x<N;x++)M[y][x]=(x==0||y==0||x==N-1||y==N-1)?1:0}
+for(const x of [4,9,14])for(const y of [4,9,14]){M[y][x]=2;if(x==9&&y==9)M[y][x+1]=M[y+1][x]=2}
+const ok=(x,y)=>!M[y|0][x|0];
+function mv(o,vx,vy,r){if(ok(o.x+vx+Math.sign(vx)*r,o.y))o.x+=vx;if(ok(o.x,o.y+vy+Math.sign(vy)*r))o.y+=vy}
+function ray(px,py,rx,ry){
+ rx=rx||1e-9;ry=ry||1e-9;let mx=px|0,my=py|0,dx=Math.abs(1/rx),dy=Math.abs(1/ry),sx,sy,sdx,sdy,side=0;
+ if(rx<0){sx=-1;sdx=(px-mx)*dx}else{sx=1;sdx=(mx+1-px)*dx}
+ if(ry<0){sy=-1;sdy=(py-my)*dy}else{sy=1;sdy=(my+1-py)*dy}
+ for(let i=0;i<40;i++){
+  if(sdx<sdy){sdx+=dx;mx+=sx;side=0}else{sdy+=dy;my+=sy;side=1}
+  if(!M[my]||M[my][mx]===undefined||M[my][mx])break}
+ return [side?sdy-dy:sdx-dx,side,(M[my]&&M[my][mx])||1]}
+const WP=[{n:"تپانچه",d:2,r:.35,p:1,sp:.01,auto:0},{n:"شاتگان",d:1.3,r:.9,p:7,sp:.12,auto:0},{n:"مسلسل",d:1,r:.11,p:1,sp:.04,auto:1}];
+const DEF={lv:1,money:0,mhp:100,ammo:40,dm:1,sp:1,own:[1,0,0],w:0,hp:100};
+let S=Object.assign({},DEF,{own:[1,0,0]});
+function save(){try{localStorage.setItem("fps1",JSON.stringify(S))}catch(e){}}
+function load(){try{const s=JSON.parse(localStorage.getItem("fps1"));if(s&&s.lv)S=Object.assign({},DEF,s)}catch(e){}}
+let AC;function beep(f,d,t){try{AC=AC||new(window.AudioContext||webkitAudioContext)();const o=AC.createOscillator(),v=AC.createGain();o.type=t||"square";o.frequency.value=f;v.gain.value=.04;o.connect(v);v.connect(AC.destination);o.start();o.stop(AC.currentTime+d)}catch(e){}}
+const vib=n=>{try{navigator.vibrate(n)}catch(e){}};
+let P,E=[],C=[],Q=[],sT=0,mode="menu",T=0,jx=0,jy=0,firing=0,req=0,keys={},doneT=0;
+function start(){
+ P={x:2.5,y:2.5,a:Math.PI/4,cd:0,fl:0,rec:0,hurt:0,er:0};S.hp=S.mhp;E=[];C=[];Q=[];sT=4;doneT=0;
+ S.ammo=Math.max(S.ammo,25);
+ const n=4+S.lv*3,L=S.lv;
+ for(let i=0;i<n;i++){
+  const tank=Math.random()<.2,h=2+(L>>1),x=0,y=0;
+  Q.push(tank?{x,y,hp:h*3,sp:.9,sz:1.15,dmg:14,k:2,col:"#8a4a9a",cd:0,fl:0}:{x,y,hp:h,sp:Math.min(2.3,1.3+L*.06),sz:.9,dmg:8,k:1,col:"#cc3333",cd:0,fl:0})}
+ if(L%5==0){Q.push({x:N-3,y:N-3,hp:25+L*3,sp:1.1,sz:1.6,dmg:18,k:8,col:"#e88a1a",cd:0,fl:0})}
+ mode="play";["menu","shop","dead"].forEach(i=>$(i).style.display="none")}
+function hurt(n){S.hp-=n;P.hurt=.45;vib(40);beep(120,.12,"sawtooth");if(S.hp<=0){mode="dead";$("dead").style.display="flex"}}
+function shoot(){
+ const w=WP[S.w];if(P.cd>0||mode!="play")return;
+ if(S.ammo<=0){beep(80,.05);P.cd=.3;return}
+ S.ammo--;P.cd=w.r;P.fl=.06;P.rec=1;beep(S.w==1?90:220,.07);vib(10);
+ for(let p=0;p<w.p;p++){
+  const a=P.a+(Math.random()-.5)*2*w.sp,rx=Math.cos(a),ry=Math.sin(a);let bd=ray(P.x,P.y,rx,ry)[0],best=null;
+  for(const e of E){const ex=e.x-P.x,ey=e.y-P.y,t=ex*rx+ey*ry;if(t<=0||t>=bd)continue;
+   if(Math.abs(ex*ry-ey*rx)<e.sz*.3){bd=t;best=e}}
+  if(best){best.hp-=w.d*S.dm;best.fl=.1}}
+ E=E.filter(e=>{if(e.hp>0)return true;beep(300,.1,"triangle");
+  for(let k=0;k<e.k;k++)C.push({x:e.x+(Math.random()-.5)*.7,y:e.y+(Math.random()-.5)*.7,v:6+2*S.lv});return false})}
+function spawn(){let best=null;
+ for(let i=0;i<40;i++){const x=1+Math.random()*(N-2),y=1+Math.random()*(N-2);if(!ok(x,y))continue;
+  const d=Math.hypot(x-P.x,y-P.y);if(d<(i<30?9:6))continue;
+  const hid=ray(P.x,P.y,(x-P.x)/d,(y-P.y)/d)[0]<d-.5;if(hid||i>=30){best=[x,y];break}}
+ if(!best)return;const e=Q.shift();e.x=best[0];e.y=best[1];E.push(e)}
+function update(dt){
+ T+=dt;P.cd-=dt;P.fl-=dt;P.rec=Math.max(0,P.rec-dt*6);P.hurt=Math.max(0,P.hurt-dt);
+ let f=-jy,s=jx;if(keys.w||keys.ArrowUp)f+=1;if(keys.s||keys.ArrowDown)f-=1;if(keys.d)s+=1;if(keys.a)s-=1;
+ if(keys.ArrowLeft)P.a+=2*dt;if(keys.ArrowRight)P.a-=2*dt;
+ const l=Math.hypot(f,s);if(l>1){f/=l;s/=l}
+ const sp=3*S.sp*dt;mv(P,(Math.cos(P.a)*f+Math.sin(P.a)*s)*sp,(Math.sin(P.a)*f-Math.cos(P.a)*s)*sp,.22);
+ if(firing&&(WP[S.w].auto||req))shoot();req=0;
+ if(S.ammo<=0&&E.length){P.er+=dt;if(P.er>2.5){S.ammo=3;P.er=0}}
+ sT-=dt;if(Q.length&&sT<=0&&E.length<4+(S.lv>>1)){spawn();sT=1.6}
+ for(const e of E){e.fl-=dt;const dx=P.x-e.x,dy=P.y-e.y,d=Math.hypot(dx,dy);
+  if(d>.9)mv(e,dx/d*e.sp*dt,dy/d*e.sp*dt,.25);else{e.cd-=dt;if(e.cd<=0){e.cd=.9;hurt(e.dmg)}}}
+ C=C.filter(c=>{const d=Math.hypot(P.x-c.x,P.y-c.y);if(d<1.6){mv(c,(P.x-c.x)/d*4*dt,(P.y-c.y)/d*4*dt,.05)}
+  if(d<.55){S.money+=c.v;beep(900,.06,"sine");return false}return true});
+ if(!E.length&&!Q.length&&!C.length&&mode=="play"){doneT+=dt;if(doneT>.8){mode="shop";save();openShop()}}}
+function draw(){
+ g.fillStyle="#14161f";g.fillRect(0,0,W,H/2);g.fillStyle="#26262d";g.fillRect(0,H/2,W,H/2);
+ const dx=Math.cos(P.a),dy=Math.sin(P.a),px=Math.sin(P.a)*PL,py=-Math.cos(P.a)*PL,K=W/(2*PL);
+ for(let x=0;x<W;x++){const c=2*x/W-1,r=ray(P.x,P.y,dx+px*c,dy+py*c);zb[x]=r[0];
+  const h=K/r[0],sh=Math.max(.15,1/(1+r[0]*.22))*(r[1]?.7:1),b=r[2]==2?[190,95,85]:[90,115,175];
+  g.fillStyle="rgb("+(b[0]*sh|0)+","+(b[1]*sh|0)+","+(b[2]*sh|0)+")";g.fillRect(x,(H-h)/2,1,h)}
+ const det=px*dy-dx*py,sp=[];
+ for(const e of E)sp.push({o:e,e:1});for(const c of C)sp.push({o:c});
+ for(const q of sp){const o=q.o,sx=o.x-P.x,sy=o.y-P.y;q.ty=(-py*sx+px*sy)/det;q.tx=(dy*sx-dx*sy)/det}
+ sp.sort((a,b)=>b.ty-a.ty);
+ for(const q of sp){if(q.ty<.2)continue;const o=q.o,sz=q.e?o.sz:.28,z0=q.e?0:.12,u0=K/q.ty,cx=W/2*(1+q.tx/q.ty),
+   bot=H/2+(.5-z0)*u0,hh=sz*u0,top=bot-hh,wf=q.e?.7:.5*(.25+.75*Math.abs(Math.cos(T*5))),w=hh*wf;
+  g.globalAlpha=Math.max(.35,1/(1+q.ty*.15));
+  for(let x=Math.max(0,Math.floor(cx-w/2));x<Math.min(W,cx+w/2);x++){if(q.ty>=zb[x])continue;const u=(x-(cx-w/2))/w;
+   if(q.e){const fl=o.fl>0;g.fillStyle=fl?"#fff":o.col;
+    if(u>.1&&u<.9)g.fillRect(x,top+hh*.3,1,hh*.7);
+    if(u>.28&&u<.72){g.fillStyle=fl?"#fff":"#d9a07a";g.fillRect(x,top,1,hh*.3);
+     if((u>.35&&u<.45)||(u>.55&&u<.65)){g.fillStyle="#ff0";g.fillRect(x,top+hh*.1,1,Math.max(1,hh*.06))}}}
+   else{const r=Math.sqrt(Math.max(0,1-(2*u-1)**2));g.fillStyle="#ffc83d";g.fillRect(x,top+hh*(1-r)/2,1,hh*r)}}
+  g.globalAlpha=1}
+ const k=H/170,bx=W/2+(S.w==1?0:6*k),by=H+P.rec*7*k;
+ g.fillStyle="#2c2c32";g.fillRect(bx-6*k,by-38*k,12*k,40*k);g.fillStyle="#555";g.fillRect(bx-3*k,by-44*k,6*k,10*k);
+ if(S.w==1){g.fillStyle="#2c2c32";g.fillRect(bx-10*k,by-34*k,20*k,8*k)}
+ if(P.fl>0){g.fillStyle="#ffd34d";g.beginPath();g.arc(bx,by-48*k,9*k,0,7);g.fill()}
+ if(P.hurt>0){g.fillStyle="rgba(210,0,0,"+P.hurt*.8+")";g.fillRect(0,0,W,H)}}
+function hud(){
+ $("hp").textContent="❤ "+Math.max(0,S.hp|0)+"/"+S.mhp;$("am").textContent="🔫 "+WP[S.w].n+" "+S.ammo;
+ $("mo").textContent="💰 "+S.money;$("lv").textContent="مرحله "+S.lv;
+ $("msg").textContent=(mode=="play"&&!E.length&&!Q.length&&C.length)?"سکه‌ها رو جمع کن!":(mode=="play"?"دشمن: "+(E.length+Q.length):"")}
+let last=0;
+function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;
+ if(mode=="play")update(dt);if(P)draw();hud();requestAnimationFrame(loop)}
+const IT=[
+ ["شاتگان",120,()=>S.own[1],()=>{S.own[1]=1;S.w=1}],
+ ["مسلسل",250,()=>S.own[2],()=>{S.own[2]=1;S.w=2}],
+ ["۴۰ تیر",30,0,()=>{S.ammo+=40}],
+ ["قدرت شلیک +۲۵٪",100,0,()=>{S.dm+=.25}],
+ ["جان +۲۵",60,0,()=>{S.mhp+=25}],
+ ["سرعت +۱۰٪",60,0,()=>{S.sp+=.1}]];
+function openShop(){
+ $("shop").style.display="flex";$("sm").textContent="💰 "+S.money+"  |  مرحله "+S.lv+" تموم شد";
+ $("items").innerHTML="";
+ IT.forEach((it,i)=>{const b=document.createElement("button");b.className="g";const own=it[2]&&it[2]();
+  b.textContent=own?it[0]+" ✓":it[0]+" - "+it[1];b.disabled=own||S.money<it[1];
+  b.onclick=()=>{if(S.money<it[1])return;S.money-=it[1];it[3]();beep(600,.08,"sine");save();openShop()};
+  $("items").appendChild(b)})}
+$("next").onclick=()=>{S.lv++;save();start()};
+$("again").onclick=()=>start();
+$("go").onclick=()=>{try{document.documentElement.requestFullscreen().then(()=>screen.orientation.lock("landscape")).catch(()=>{})}catch(e){}start()};
+const tp=$("t");let jid=null,lid=null,jo,lx;
+tp.onpointerdown=e=>{tp.setPointerCapture(e.pointerId);
+ if(e.clientX<innerWidth/2&&jid===null){jid=e.pointerId;jo=[e.clientX,e.clientY];const j=$("js");j.style.display="block";j.style.left=e.clientX+"px";j.style.top=e.clientY+"px"}
+ else if(lid===null){lid=e.pointerId;lx=e.clientX}};
+tp.onpointermove=e=>{
+ if(e.pointerId===jid){let x=(e.clientX-jo[0])/50,y=(e.clientY-jo[1])/50;const l=Math.hypot(x,y);if(l>1){x/=l;y/=l}jx=x;jy=y;
+  $("kn").style.transform="translate("+x*30+"px,"+y*30+"px)"}
+ else if(e.pointerId===lid&&P){P.a-=(e.clientX-lx)*.008;lx=e.clientX}};
+tp.onpointerup=tp.onpointercancel=e=>{if(e.pointerId===jid){jid=null;jx=jy=0;$("js").style.display="none";$("kn").style.transform=""}if(e.pointerId===lid)lid=null};
+const fb=$("f");fb.onpointerdown=e=>{e.stopPropagation();fb.setPointerCapture(e.pointerId);firing=1;req=1;fb.style.background="#e338"};
+fb.onpointerup=fb.onpointercancel=()=>{firing=0;fb.style.background=""};
+const sw=()=>{let i=S.w;do{i=(i+1)%3}while(!S.own[i]);S.w=i};
+$("s").onpointerdown=e=>{e.stopPropagation();sw()};
+addEventListener("keydown",e=>{keys[e.key]=1;if(e.key==" "){firing=1;req=1}if(e.key=="q")sw()});
+addEventListener("keyup",e=>{keys[e.key]=0;if(e.key==" ")firing=0});
+addEventListener("contextmenu",e=>e.preventDefault());
+load();if(S.lv>1)$("go").textContent="ادامه (مرحله "+S.lv+")";
+$("menu").style.display="flex";requestAnimationFrame(loop);
+</script>
+</body>
+</html>
